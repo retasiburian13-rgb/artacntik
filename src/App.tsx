@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import mqtt, { MqttClient } from "mqtt";
 import { LogEntry, AppState } from "./types";
 import { Mic, MicOff, Thermometer, Droplets, Power, Activity, Wifi, WifiOff, Settings, AlertCircle } from "lucide-react";
+import type { MqttClient } from "mqtt";
+
+const mqtt = (window as any).mqtt;
 
 export default function App() {
-  const [flespiToken, setFlespiToken] = useState("");
+  const [flespiTokenInput, setFlespiTokenInput] = useState("");
+  const [activeFlespiToken, setActiveFlespiToken] = useState("");
 
   const [connected, setConnected] = useState({
     mosquitto: false,
@@ -91,12 +94,12 @@ export default function App() {
 
   // Flespi connecting
   useEffect(() => {
-    if (!flespiToken) return;
+    if (!activeFlespiToken) return;
 
     const clientId2 = "dashboard_flespi_" + Math.random().toString(16).substring(2, 8);
     clientFlespi.current = mqtt.connect("wss://mqtt.flespi.io", { // wss is usually required, prompt says ws port 80 but wss is port 443. I will try both or stick to standard wss if it fails. Let's use wss to be safe in browser. Flespi uses port 443 for wss.
       clientId: clientId2,
-      username: flespiToken,
+      username: activeFlespiToken,
       password: "",
       clean: true,
       protocolVersion: 4
@@ -118,12 +121,21 @@ export default function App() {
     return () => {
       clientFlespi.current?.end();
     };
-  }, [isFlespiSetup, flespiToken, addLog]);
+  }, [activeFlespiToken, addLog]);
 
   // Handle incoming messages
   useEffect(() => {
-    const handleMessage = (topic: string, message: Buffer) => {
-      const val = parseFloat(message.toString());
+    const handleMessage = (topic: string, message: any) => {
+      let payloadText = "";
+      if (typeof message === "string") {
+        payloadText = message;
+      } else if (message instanceof Uint8Array) {
+        payloadText = new TextDecoder().decode(message);
+      } else if (message && message.toString) {
+        payloadText = message.toString();
+      }
+      
+      const val = parseFloat(payloadText);
       if (isNaN(val)) return;
 
       if (topic === "iot/sensor/suhu") {
@@ -271,21 +283,28 @@ export default function App() {
       {/* HEADER */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 h-auto sm:h-12 flex-shrink-0 gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#ff6b00] rounded-lg flex items-center justify-center">
-            <Settings className="w-5 h-5 text-black" />
+          <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-lg flex items-center justify-center">
+            <Settings className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight uppercase">
-            IoT Dashboard <span className="text-[#ff6b00] text-sm opacity-60 ml-2 hidden sm:inline-block">V.2.0</span>
+            IoT Dashboard <span className="text-[#f43f5e] text-sm opacity-60 ml-2 hidden sm:inline-block">V.2.0</span>
           </h1>
         </div>
         <div className="flex items-center gap-2">
           <input 
             type="password"
             placeholder="Token Flespi..."
-            value={flespiToken}
-            onChange={(e) => setFlespiToken(e.target.value)}
-            className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#ff6b00] transition-colors w-40 sm:w-64"
+            value={flespiTokenInput}
+            onChange={(e) => setFlespiTokenInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && setActiveFlespiToken(flespiTokenInput)}
+            className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#f43f5e] transition-colors w-32 sm:w-56"
           />
+          <button 
+            onClick={() => setActiveFlespiToken(flespiTokenInput)}
+            className="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-300 px-3 py-2 rounded-lg transition-colors border border-zinc-700"
+          >
+            Connect
+          </button>
         </div>
       </header>
 
@@ -307,7 +326,7 @@ export default function App() {
           <div className="md:col-span-6 md:row-span-3 bg-[#18181b] border border-zinc-800 rounded-2xl p-5 md:p-6 flex flex-col">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Real-time Telemetry</h2>
-              <span className="px-2 py-1 bg-[#ff6b00]/10 text-[#ff6b00] text-[10px] rounded font-bold">LIVE DATA</span>
+              <span className="px-2 py-1 bg-[#f43f5e]/10 text-[#f43f5e] text-[10px] rounded font-bold">LIVE DATA</span>
             </div>
             <div className="grid grid-cols-2 gap-4 flex-grow">
               <div className="bg-zinc-900/40 rounded-2xl md:rounded-3xl border border-zinc-800/50 flex flex-col items-center justify-center relative overflow-hidden group p-4">
@@ -316,10 +335,10 @@ export default function App() {
                 </div>
                 <span className="text-xs md:text-sm text-zinc-400 font-medium mb-1 md:mb-2 text-center">Temperatur</span>
                 <div className="flex items-baseline z-10" key={state.temperature}>
-                  <span className="text-4xl sm:text-5xl md:text-7xl font-light text-[#ff6b00] tracking-tighter animate-pulse-orange">
+                  <span className="text-4xl sm:text-5xl md:text-7xl font-light text-[#f43f5e] tracking-tighter animate-pulse-orange">
                     {state.temperature ?? "--"}
                   </span>
-                  <span className="text-lg md:text-2xl text-[#ff6b00] ml-1">°C</span>
+                  <span className="text-lg md:text-2xl text-[#f43f5e] ml-1">°C</span>
                 </div>
               </div>
               <div className="bg-zinc-900/40 rounded-2xl md:rounded-3xl border border-zinc-800/50 flex flex-col items-center justify-center relative overflow-hidden group p-4">
@@ -328,10 +347,10 @@ export default function App() {
                 </div>
                 <span className="text-xs md:text-sm text-zinc-400 font-medium mb-1 md:mb-2 text-center">Kelembapan</span>
                 <div className="flex items-baseline z-10" key={state.humidity + "h"}>
-                  <span className="text-4xl sm:text-5xl md:text-7xl font-light text-[#ff6b00] tracking-tighter animate-pulse-orange">
+                  <span className="text-4xl sm:text-5xl md:text-7xl font-light text-[#f43f5e] tracking-tighter animate-pulse-orange">
                     {state.humidity ?? "--"}
                   </span>
-                  <span className="text-lg md:text-2xl text-[#ff6b00] ml-1">%</span>
+                  <span className="text-lg md:text-2xl text-[#f43f5e] ml-1">%</span>
                 </div>
               </div>
             </div>
@@ -348,7 +367,7 @@ export default function App() {
                   onClick={() => toggleRelay(id as 1 | 2 | 3 | 4)}
                   className={`flex flex-col items-center justify-center gap-1 md:gap-2 rounded-2xl transition-all ${
                     state.relays[id as 1 | 2 | 3 | 4]
-                      ? "bg-[#ff6b00] text-black shadow-[0_0_15px_rgba(255,107,0,0.4)]"
+                      ? "bg-gradient-to-br from-pink-500 to-red-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]"
                       : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                   } ${isPatternActive ? "opacity-30 cursor-not-allowed" : ""}`}
                 >
@@ -374,7 +393,7 @@ export default function App() {
                 let textColor = "text-zinc-200";
                 let prefix = "SYS:";
 
-                if (isSend) { borderColor = "border-[#ff6b00]"; bgColor = "bg-zinc-900/30"; textColor = "text-zinc-200"; prefix = "PUB:"; }
+                if (isSend) { borderColor = "border-[#f43f5e]"; bgColor = "bg-zinc-900/30"; textColor = "text-zinc-200"; prefix = "PUB:"; }
                 else if (isVoice) { borderColor = "border-purple-500"; bgColor = "bg-purple-900/10"; textColor = "text-purple-200"; prefix = "VOX:"; }
                 else if (isSys) { prefix = "EVT:"; }
 
@@ -395,25 +414,25 @@ export default function App() {
                onClick={toggleListening}
                className={`w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center relative shrink-0 transition-all ${
                   isListening
-                    ? "bg-[#ff6b00]/10 border-4 border-[#ff6b00]"
+                    ? "bg-gradient-to-br from-pink-500/20 to-red-500/20 border-4 border-pink-500"
                     : "bg-zinc-800 border-2 border-zinc-700 hover:border-zinc-500"
                }`}
             >
-               {isListening && <div className="absolute inset-0 rounded-full bg-[#ff6b00] animate-ping opacity-20"></div>}
-               {isListening ? <Mic className="w-12 h-12 text-[#ff6b00]" /> : <MicOff className="w-10 h-10 text-zinc-500" />}
+               {isListening && <div className="absolute inset-0 rounded-full bg-pink-500 animate-ping opacity-20"></div>}
+               {isListening ? <Mic className="w-12 h-12 text-pink-500" /> : <MicOff className="w-10 h-10 text-zinc-500" />}
             </button>
             <div className="flex-grow w-full text-center md:text-left flex flex-col justify-center">
-               <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 md:mb-2 ${isListening ? "text-[#ff6b00]" : "text-zinc-500"}`}>
+               <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 md:mb-2 ${isListening ? "text-[#f43f5e]" : "text-zinc-500"}`}>
                    {isListening ? "Voice Command Active" : "Voice Command Inactive"}
                </h2>
                <p className="text-lg md:text-2xl font-semibold tracking-tight leading-tight mb-2 md:mb-3 italic text-white line-clamp-2 min-h-[32px] md:min-h-[56px] flex items-center justify-center md:justify-start">
                   {lastCommand ? `"${lastCommand}"` : (isListening ? '"Mendengarkan..."' : "Ketuk mikrofon")}
                </p>
                <div className="h-[2px] bg-zinc-800 w-full mb-3 overflow-hidden rounded">
-                 {isListening && <div className="h-full bg-[#ff6b00] w-full animate-pulse-orange"></div>}
+                 {isListening && <div className="h-full bg-[#f43f5e] w-full animate-pulse-orange"></div>}
                </div>
                <p className="text-xs md:text-sm text-zinc-500 line-clamp-1">
-                  Status: <span className={lastCommand ? "text-[#ff6b00]" : "text-zinc-400"}>
+                  Status: <span className={lastCommand ? "text-[#f43f5e]" : "text-zinc-400"}>
                     {logs.slice().reverse().find(l => l.source === 'system' && l.timestamp > new Date(Date.now() - 5000))?.message || "Siap menerima perintah..."}
                   </span>
                </p>
@@ -428,28 +447,28 @@ export default function App() {
                   onClick={() => togglePattern(1)}
                   className={`w-full py-4 md:py-5 px-4 border rounded-xl flex items-center gap-4 transition-all ${
                     state.patterns[1]
-                      ? "bg-[#ff6b00]/10 border-[#ff6b00]/30"
+                      ? "bg-[#f43f5e]/10 border-[#f43f5e]/30"
                       : "bg-zinc-800/80 border-zinc-700 hover:border-zinc-500"
                   }`}
                 >
-                  <div className={`w-3 h-3 rounded-full shrink-0 ${state.patterns[1] ? "bg-[#ff6b00] shadow-[0_0_8px_#ff6b00]" : "bg-zinc-600"}`}></div>
+                  <div className={`w-3 h-3 rounded-full shrink-0 ${state.patterns[1] ? "bg-[#f43f5e] shadow-[0_0_8px_#f43f5e]" : "bg-zinc-600"}`}></div>
                   <div className="text-left leading-tight">
-                    <p className={`text-xs font-bold ${state.patterns[1] ? "text-[#ff6b00]" : "text-zinc-300"}`}>POLA 01</p>
-                    <p className={`text-[10px] uppercase mt-0.5 ${state.patterns[1] ? "text-[#ff6b00]/70" : "text-zinc-500"}`}>Kiri ke Kanan</p>
+                    <p className={`text-xs font-bold ${state.patterns[1] ? "text-[#f43f5e]" : "text-zinc-300"}`}>POLA 01</p>
+                    <p className={`text-[10px] uppercase mt-0.5 ${state.patterns[1] ? "text-[#f43f5e]/70" : "text-zinc-500"}`}>Kiri ke Kanan</p>
                   </div>
                 </button>
                 <button
                   onClick={() => togglePattern(2)}
                   className={`w-full py-4 md:py-5 px-4 border rounded-xl flex items-center gap-4 transition-all ${
                     state.patterns[2]
-                      ? "bg-[#ff6b00]/10 border-[#ff6b00]/30"
+                      ? "bg-[#f43f5e]/10 border-[#f43f5e]/30"
                       : "bg-zinc-800/80 border-zinc-700 hover:border-zinc-500"
                   }`}
                 >
-                  <div className={`w-3 h-3 rounded-full shrink-0 ${state.patterns[2] ? "bg-[#ff6b00] shadow-[0_0_8px_#ff6b00]" : "bg-zinc-600"}`}></div>
+                  <div className={`w-3 h-3 rounded-full shrink-0 ${state.patterns[2] ? "bg-[#f43f5e] shadow-[0_0_8px_#f43f5e]" : "bg-zinc-600"}`}></div>
                   <div className="text-left leading-tight">
-                    <p className={`text-xs font-bold ${state.patterns[2] ? "text-[#ff6b00]" : "text-zinc-300"}`}>POLA 02</p>
-                    <p className={`text-[10px] uppercase mt-0.5 ${state.patterns[2] ? "text-[#ff6b00]/70" : "text-zinc-500"}`}>Strobe Effect</p>
+                    <p className={`text-xs font-bold ${state.patterns[2] ? "text-[#f43f5e]" : "text-zinc-300"}`}>POLA 02</p>
+                    <p className={`text-[10px] uppercase mt-0.5 ${state.patterns[2] ? "text-[#f43f5e]/70" : "text-zinc-500"}`}>Strobe Effect</p>
                   </div>
                 </button>
 
