@@ -179,22 +179,6 @@ export default function App() {
     publishToAll(`iot/relay/${id}`, nextState ? "ON" : "OFF");
   };
 
-  const setAllRelays = (targetState: boolean) => {
-    const isPatternActive = stateRef.current.patterns[1] || stateRef.current.patterns[2];
-    if (isPatternActive) return;
-
-    setState((p) => {
-      const newRelays = { ...p.relays };
-      [1, 2, 3, 4].forEach((id) => {
-        if (newRelays[id as 1 | 2 | 3 | 4] !== targetState) {
-          newRelays[id as 1 | 2 | 3 | 4] = targetState;
-          publishToAll(`iot/relay/${id}`, targetState ? "ON" : "OFF");
-        }
-      });
-      return { ...p, relays: newRelays };
-    });
-  };
-
   const togglePattern = (id: 1 | 2) => {
     const nextState = !stateRef.current.patterns[id];
     
@@ -273,10 +257,7 @@ export default function App() {
             matched = true;
          };
 
-         if (transcript.includes("semua relay") || transcript.includes("semua lampu") || transcript.includes("all relay") || transcript.includes("all lamp") || transcript.includes("semuanya")) {
-            executeRelayCommand(() => setAllRelays(true), "Semua relay dinyalakan");
-         }
-         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { if (!stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
+         if (transcript.includes("pola satu") || transcript.includes("pola 1")) { if (!stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
          else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { if (!stateRef.current.patterns[2]) togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
          else if (transcript.includes("relay satu") || transcript.includes("relay 1")) { executeRelayCommand(() => { if (!stateRef.current.relays[1]) toggleRelay(1); }, "Relay satu dinyalakan"); }
          else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { executeRelayCommand(() => { if (!stateRef.current.relays[2]) toggleRelay(2); }, "Relay dua dinyalakan"); }
@@ -296,10 +277,7 @@ export default function App() {
             matched = true;
          };
 
-         if (transcript.includes("semua relay") || transcript.includes("semua lampu") || transcript.includes("all relay") || transcript.includes("all lamp") || transcript.includes("semuanya")) {
-            executeRelayCommand(() => setAllRelays(false), "Semua relay dimatikan");
-         }
-         else if (transcript.includes("semua pola")) { 
+         if (transcript.includes("semua pola")) { 
              if (stateRef.current.patterns[1]) togglePattern(1);
              if (stateRef.current.patterns[2]) togglePattern(2);
              speakText("Semua pola dimatikan");
@@ -414,25 +392,7 @@ export default function App() {
 
           {/* RELAY CONTROL (Right Top) */}
           <div className="md:col-span-3 md:row-span-3 bg-[#18181b] border border-zinc-800 rounded-2xl p-5 flex flex-col h-[280px] md:h-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Relay Control</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setAllRelays(true)}
-                  disabled={isPatternActive}
-                  className="px-2 py-1 text-[10px] font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed uppercase transition-colors"
-                >
-                  All ON
-                </button>
-                <button
-                  onClick={() => setAllRelays(false)}
-                  disabled={isPatternActive}
-                  className="px-2 py-1 text-[10px] font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed uppercase transition-colors"
-                >
-                  All OFF
-                </button>
-              </div>
-            </div>
+            <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Relay Control</h2>
             <div className="grid grid-cols-2 gap-3 md:gap-4 flex-grow">
               {[1, 2, 3, 4].map((id) => (
                 <button
