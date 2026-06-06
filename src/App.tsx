@@ -262,8 +262,9 @@ export default function App() {
          speakText(speech);
          addLog("system", speech);
       } else {
+         const transcriptArr = transcript.split(/\s+/);
          const isTurnOn = /(nyala|hidup|on)/i.test(transcript);
-         const isTurnOff = /(mati|stop|off)/i.test(transcript);
+         const isTurnOff = /(mati|stop|off|padam)/i.test(transcript);
          
          const isRelay1 = /relay\s*(1|satu)/i.test(transcript);
          const isRelay2 = /relay\s*(2|dua)/i.test(transcript);
@@ -272,8 +273,8 @@ export default function App() {
          
          const isPattern1 = /pola\s*(1|satu)/i.test(transcript);
          const isPattern2 = /pola\s*(2|dua)/i.test(transcript);
-         const isAllPattern = /(semua\s*pola|seluruh\s*pola)/i.test(transcript);
-         const isAllRelay = /(semua\s*(relay|lampu)?|seluruh\s*(relay|lampu)?|all)/i.test(transcript) && !isAllPattern;
+         const isAllPattern = /(semua|seluruh)\s+pola/i.test(transcript);
+         const isAllRelay = /(semua|seluruh)\s+(relay|lampu)/i.test(transcript) || /\ball\b/i.test(transcript);
 
          if (isTurnOn) {
             if (isAllRelay) {
@@ -284,12 +285,12 @@ export default function App() {
                speakText("Semua relay dinyalakan");
                matched = true;
             }
+            else if (isPattern1) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
+            else if (isPattern2) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
             else if (isRelay1) { toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
             else if (isRelay2) { toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true; }
             else if (isRelay3) { toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true; }
             else if (isRelay4) { toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true; }
-            else if (isPattern1) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
-            else if (isPattern2) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
          } 
          else if (isTurnOff) {
             if (isAllRelay) {
@@ -300,10 +301,6 @@ export default function App() {
                speakText("Semua relay dimatikan");
                matched = true;
             }
-            else if (isRelay1) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
-            else if (isRelay2) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true; }
-            else if (isRelay3) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true; }
-            else if (isRelay4) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true; }
             else if (isAllPattern) { 
                if (stateRef.current.patterns[1]) togglePattern(1);
                if (stateRef.current.patterns[2]) togglePattern(2);
@@ -312,6 +309,10 @@ export default function App() {
             }
             else if (isPattern1) { togglePattern(1); speakText("Pola satu dimatikan"); matched = true; }
             else if (isPattern2) { togglePattern(2); speakText("Pola dua dimatikan"); matched = true; }
+            else if (isRelay1) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
+            else if (isRelay2) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true; }
+            else if (isRelay3) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true; }
+            else if (isRelay4) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true; }
          }
       }
 
