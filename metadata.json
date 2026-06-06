@@ -1,0 +1,6 @@
+{
+  "name": "IoT Web Dashboard",
+  "description": "Dashboard IoT dengan tema oranye, mendukung 3 broker MQTT (Mosquitto & Flespi) serta kontrol Web Speech API berbahasa Indonesia.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
