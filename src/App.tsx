@@ -277,13 +277,7 @@ export default function App() {
             matched = true;
          };
 
-         if (transcript.includes("semua pola")) { 
-             if (stateRef.current.patterns[1]) togglePattern(1);
-             if (stateRef.current.patterns[2]) togglePattern(2);
-             speakText("Semua pola dimatikan");
-             matched = true;
-         }
-         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { if (stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
+         if (transcript.includes("pola satu") || transcript.includes("pola 1")) { if (stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
          else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { if (stateRef.current.patterns[2]) togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
          else if (transcript.includes("relay satu") || transcript.includes("relay 1")) { executeRelayCommand(() => { if (stateRef.current.relays[1]) toggleRelay(1); }, "Relay satu dimatikan"); }
          else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { executeRelayCommand(() => { if (stateRef.current.relays[2]) toggleRelay(2); }, "Relay dua dimatikan"); }
