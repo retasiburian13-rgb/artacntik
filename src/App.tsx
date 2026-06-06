@@ -179,6 +179,22 @@ export default function App() {
     publishToAll(`iot/relay/${id}`, nextState ? "ON" : "OFF");
   };
 
+  const setAllRelays = (targetState: boolean) => {
+    const isPatternActive = stateRef.current.patterns[1] || stateRef.current.patterns[2];
+    if (isPatternActive) return;
+
+    setState((p) => {
+      const newRelays = { ...p.relays };
+      [1, 2, 3, 4].forEach((id) => {
+        if (newRelays[id as 1 | 2 | 3 | 4] !== targetState) {
+          newRelays[id as 1 | 2 | 3 | 4] = targetState;
+          publishToAll(`iot/relay/${id}`, targetState ? "ON" : "OFF");
+        }
+      });
+      return { ...p, relays: newRelays };
+    });
+  };
+
   const togglePattern = (id: 1 | 2) => {
     const nextState = !stateRef.current.patterns[id];
     
@@ -245,30 +261,58 @@ export default function App() {
          const speech = `Suhu saat ini ${currentTemp} derajat celcius, kelembapan saat ini ${currentHum} persen`;
          speakText(speech);
          addLog("system", speech);
-      } 
-      // Relays
-      else if (transcript.includes("nyala") || transcript.includes("hidup") || transcript.includes("on")) {
-         if (transcript.includes("relay satu") || transcript.includes("relay 1")) { toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
-         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true;}
-         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true;}
-         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true;}
-         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true;}
-         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true;}
-      }
-      // Off
-      else if (transcript.includes("mati") || transcript.includes("stop") || transcript.includes("off")) {
-         if (transcript.includes("relay satu") || transcript.includes("relay 1")) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
-         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true;}
-         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true;}
-         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true;}
-         else if (transcript.includes("semua pola")) { 
-             if (stateRef.current.patterns[1]) togglePattern(1);
-             if (stateRef.current.patterns[2]) togglePattern(2);
-             speakText("Semua pola dimatikan");
-             matched = true;
+      } else {
+         const isTurnOn = /(nyala|hidup|on)/i.test(transcript);
+         const isTurnOff = /(mati|stop|off)/i.test(transcript);
+         
+         const isRelay1 = /relay\s*(1|satu)/i.test(transcript);
+         const isRelay2 = /relay\s*(2|dua)/i.test(transcript);
+         const isRelay3 = /relay\s*(3|tiga)/i.test(transcript);
+         const isRelay4 = /relay\s*(4|empat)/i.test(transcript);
+         
+         const isPattern1 = /pola\s*(1|satu)/i.test(transcript);
+         const isPattern2 = /pola\s*(2|dua)/i.test(transcript);
+         const isAllPattern = /(semua\s*pola|seluruh\s*pola)/i.test(transcript);
+         const isAllRelay = /(semua\s*(relay|lampu)?|seluruh\s*(relay|lampu)?|all)/i.test(transcript) && !isAllPattern;
+
+         if (isTurnOn) {
+            if (isAllRelay) {
+               if (!stateRef.current.relays[1]) toggleRelay(1);
+               if (!stateRef.current.relays[2]) toggleRelay(2);
+               if (!stateRef.current.relays[3]) toggleRelay(3);
+               if (!stateRef.current.relays[4]) toggleRelay(4);
+               speakText("Semua relay dinyalakan");
+               matched = true;
+            }
+            else if (isRelay1) { toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
+            else if (isRelay2) { toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true; }
+            else if (isRelay3) { toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true; }
+            else if (isRelay4) { toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true; }
+            else if (isPattern1) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
+            else if (isPattern2) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
+         } 
+         else if (isTurnOff) {
+            if (isAllRelay) {
+               if (stateRef.current.relays[1]) toggleRelay(1);
+               if (stateRef.current.relays[2]) toggleRelay(2);
+               if (stateRef.current.relays[3]) toggleRelay(3);
+               if (stateRef.current.relays[4]) toggleRelay(4);
+               speakText("Semua relay dimatikan");
+               matched = true;
+            }
+            else if (isRelay1) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
+            else if (isRelay2) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true; }
+            else if (isRelay3) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true; }
+            else if (isRelay4) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true; }
+            else if (isAllPattern) { 
+               if (stateRef.current.patterns[1]) togglePattern(1);
+               if (stateRef.current.patterns[2]) togglePattern(2);
+               speakText("Semua pola dimatikan");
+               matched = true;
+            }
+            else if (isPattern1) { togglePattern(1); speakText("Pola satu dimatikan"); matched = true; }
+            else if (isPattern2) { togglePattern(2); speakText("Pola dua dimatikan"); matched = true; }
          }
-         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
-         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
       }
 
       if (!matched && !!transcript) {
@@ -372,7 +416,25 @@ export default function App() {
 
           {/* RELAY CONTROL (Right Top) */}
           <div className="md:col-span-3 md:row-span-3 bg-[#18181b] border border-zinc-800 rounded-2xl p-5 flex flex-col h-[280px] md:h-auto">
-            <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Relay Control</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Relay Control</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAllRelays(true)}
+                  disabled={isPatternActive}
+                  className="px-2 py-1 text-[10px] font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed uppercase transition-colors"
+                >
+                  All ON
+                </button>
+                <button
+                  onClick={() => setAllRelays(false)}
+                  disabled={isPatternActive}
+                  className="px-2 py-1 text-[10px] font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed uppercase transition-colors"
+                >
+                  All OFF
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3 md:gap-4 flex-grow">
               {[1, 2, 3, 4].map((id) => (
                 <button
