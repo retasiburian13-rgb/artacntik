@@ -204,17 +204,19 @@ export default function App() {
   useEffect(() => {
     if (!SpeechRecognition) return;
 
-    recognition.current = new SpeechRecognition();
-    recognition.current.continuous = true;
-    recognition.current.lang = "id-ID";
-    recognition.current.interimResults = false;
+    if (!recognition.current) {
+      recognition.current = new SpeechRecognition();
+      recognition.current.continuous = true;
+      recognition.current.lang = "id-ID";
+      recognition.current.interimResults = false;
 
-    recognition.current.onstart = () => setIsListening(true);
-    recognition.current.onend = () => setIsListening(false);
-    recognition.current.onerror = (e: any) => {
-      console.error(e);
-      setIsListening(false);
-    };
+      recognition.current.onstart = () => setIsListening(true);
+      recognition.current.onend = () => setIsListening(false);
+      recognition.current.onerror = (e: any) => {
+        console.error(e);
+        setIsListening(false);
+      };
+    }
 
     recognition.current.onresult = (e: any) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase().trim();
