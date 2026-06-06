@@ -26,6 +26,11 @@ export default function App() {
   const [isListening, setIsListening] = useState(false);
   const [lastCommand, setLastCommand] = useState("");
 
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   // MQTT Clients
@@ -166,16 +171,16 @@ export default function App() {
   }, [addLog]);
 
   const toggleRelay = (id: 1 | 2 | 3 | 4) => {
-    const isPatternActive = state.patterns[1] || state.patterns[2];
+    const isPatternActive = stateRef.current.patterns[1] || stateRef.current.patterns[2];
     if (isPatternActive) return;
 
-    const nextState = !state.relays[id];
+    const nextState = !stateRef.current.relays[id];
     setState((p) => ({ ...p, relays: { ...p.relays, [id]: nextState } }));
     publishToAll(`iot/relay/${id}`, nextState ? "ON" : "OFF");
   };
 
   const togglePattern = (id: 1 | 2) => {
-    const nextState = !state.patterns[id];
+    const nextState = !stateRef.current.patterns[id];
     
     setState((p) => {
       // IF turning ON, turn off the other pattern
@@ -210,11 +215,18 @@ export default function App() {
       recognition.current.lang = "id-ID";
       recognition.current.interimResults = false;
 
-      recognition.current.onstart = () => setIsListening(true);
-      recognition.current.onend = () => setIsListening(false);
+      recognition.current.onstart = () => {
+        setIsListening(true);
+        addLog("system", "Microphone mulai mendengarkan");
+      };
+      recognition.current.onend = () => {
+        setIsListening(false);
+        addLog("system", "Microphone berhenti mendengarkan");
+      };
       recognition.current.onerror = (e: any) => {
         console.error(e);
         setIsListening(false);
+        addLog("system", `Error mikrofon: ${e.error || e.message || "Unknown error"}`);
       };
     }
 
@@ -228,35 +240,35 @@ export default function App() {
       // Match logic
       if (transcript.includes("sensor") || transcript.includes("suhu") || transcript.includes("kelembapan")) {
          matched = true;
-         const currentTemp = state.temperature ?? 0;
-         const currentHum = state.humidity ?? 0;
+         const currentTemp = stateRef.current.temperature ?? 0;
+         const currentHum = stateRef.current.humidity ?? 0;
          const speech = `Suhu saat ini ${currentTemp} derajat celcius, kelembapan saat ini ${currentHum} persen`;
          speakText(speech);
          addLog("system", speech);
       } 
       // Relays
       else if (transcript.includes("nyala") || transcript.includes("hidup") || transcript.includes("on")) {
-         if (transcript.includes("relay satu")) { toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
-         else if (transcript.includes("relay dua")) { toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true;}
-         else if (transcript.includes("relay tiga")) { toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true;}
-         else if (transcript.includes("relay empat")) { toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true;}
-         else if (transcript.includes("pola satu")) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true;}
-         else if (transcript.includes("pola dua")) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true;}
+         if (transcript.includes("relay satu") || transcript.includes("relay 1")) { toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
+         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true;}
+         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true;}
+         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true;}
+         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true;}
+         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true;}
       }
       // Off
       else if (transcript.includes("mati") || transcript.includes("stop") || transcript.includes("off")) {
-         if (transcript.includes("relay satu")) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
-         else if (transcript.includes("relay dua")) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true;}
-         else if (transcript.includes("relay tiga")) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true;}
-         else if (transcript.includes("relay empat")) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true;}
+         if (transcript.includes("relay satu") || transcript.includes("relay 1")) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
+         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true;}
+         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true;}
+         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true;}
          else if (transcript.includes("semua pola")) { 
-             if (state.patterns[1]) togglePattern(1);
-             if (state.patterns[2]) togglePattern(2);
+             if (stateRef.current.patterns[1]) togglePattern(1);
+             if (stateRef.current.patterns[2]) togglePattern(2);
              speakText("Semua pola dimatikan");
              matched = true;
          }
-         else if (transcript.includes("pola satu")) { togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
-         else if (transcript.includes("pola dua")) { togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
+         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
+         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
       }
 
       if (!matched && !!transcript) {
@@ -264,7 +276,7 @@ export default function App() {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, addLog]);
+  }, []);
 
   const toggleListening = () => {
     if (!SpeechRecognition) return alert("Browser Anda tidak mendukung Voice Command Web API");
