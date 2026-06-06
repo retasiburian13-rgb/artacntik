@@ -170,9 +170,9 @@ export default function App() {
     addLog("send", `[${topic}] ${payload}`);
   }, [addLog]);
 
-  const toggleRelay = (id: 1 | 2 | 3 | 4) => {
+  const toggleRelay = (id: 1 | 2 | 3 | 4, force: boolean = false) => {
     const isPatternActive = stateRef.current.patterns[1] || stateRef.current.patterns[2];
-    if (isPatternActive) return;
+    if (isPatternActive && !force) return;
 
     const nextState = !stateRef.current.relays[id];
     setState((p) => ({ ...p, relays: { ...p.relays, [id]: nextState } }));
@@ -260,18 +260,18 @@ export default function App() {
          if (isTurnOn) {
             if (isPattern1) { if (!stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
             else if (isPattern2) { if (!stateRef.current.patterns[2]) togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
-            else if (isRelay1) { if (!stateRef.current.relays[1]) toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
-            else if (isRelay2) { if (!stateRef.current.relays[2]) toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true; }
-            else if (isRelay3) { if (!stateRef.current.relays[3]) toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true; }
-            else if (isRelay4) { if (!stateRef.current.relays[4]) toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true; }
+            else if (isRelay1) { if (!stateRef.current.relays[1]) toggleRelay(1, true); speakText("Relay satu dinyalakan"); matched = true; }
+            else if (isRelay2) { if (!stateRef.current.relays[2]) toggleRelay(2, true); speakText("Relay dua dinyalakan"); matched = true; }
+            else if (isRelay3) { if (!stateRef.current.relays[3]) toggleRelay(3, true); speakText("Relay tiga dinyalakan"); matched = true; }
+            else if (isRelay4) { if (!stateRef.current.relays[4]) toggleRelay(4, true); speakText("Relay empat dinyalakan"); matched = true; }
          } 
          else if (isTurnOff) {
             if (isPattern1) { if (stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
             else if (isPattern2) { if (stateRef.current.patterns[2]) togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
-            else if (isRelay1) { if (stateRef.current.relays[1]) toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
-            else if (isRelay2) { if (stateRef.current.relays[2]) toggleRelay(2); speakText("Relay dua dimatikan"); matched = true; }
-            else if (isRelay3) { if (stateRef.current.relays[3]) toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true; }
-            else if (isRelay4) { if (stateRef.current.relays[4]) toggleRelay(4); speakText("Relay empat dimatikan"); matched = true; }
+            else if (isRelay1) { if (stateRef.current.relays[1]) toggleRelay(1, true); speakText("Relay satu dimatikan"); matched = true; }
+            else if (isRelay2) { if (stateRef.current.relays[2]) toggleRelay(2, true); speakText("Relay dua dimatikan"); matched = true; }
+            else if (isRelay3) { if (stateRef.current.relays[3]) toggleRelay(3, true); speakText("Relay tiga dimatikan"); matched = true; }
+            else if (isRelay4) { if (stateRef.current.relays[4]) toggleRelay(4, true); speakText("Relay empat dimatikan"); matched = true; }
          }
       }
 
