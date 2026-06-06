@@ -262,30 +262,42 @@ export default function App() {
          speakText(speech);
          addLog("system", speech);
       } else if (transcript.includes("nyala") || transcript.includes("hidup") || transcript.includes("on")) {
-         if (transcript.includes("semua relay") || transcript.includes("semua lampu") || transcript.includes("all relay") || transcript.includes("all lamp") || transcript.includes("semuanya")) {
-            if (!stateRef.current.relays[1]) toggleRelay(1);
-            if (!stateRef.current.relays[2]) toggleRelay(2);
-            if (!stateRef.current.relays[3]) toggleRelay(3);
-            if (!stateRef.current.relays[4]) toggleRelay(4);
-            speakText("Semua relay dinyalakan");
+         const isPatternActive = stateRef.current.patterns[1] || stateRef.current.patterns[2];
+         const executeRelayCommand = (action: () => void, textResult: string) => {
+            if (isPatternActive) {
+               speakText("Gagal, pola sedang aktif");
+            } else {
+               action();
+               speakText(textResult);
+            }
             matched = true;
+         };
+
+         if (transcript.includes("semua relay") || transcript.includes("semua lampu") || transcript.includes("all relay") || transcript.includes("all lamp") || transcript.includes("semuanya")) {
+            executeRelayCommand(() => setAllRelays(true), "Semua relay dinyalakan");
          }
-         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
-         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
-         else if (transcript.includes("relay satu") || transcript.includes("relay 1")) { toggleRelay(1); speakText("Relay satu dinyalakan"); matched = true; }
-         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { toggleRelay(2); speakText("Relay dua dinyalakan"); matched = true;}
-         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { toggleRelay(3); speakText("Relay tiga dinyalakan"); matched = true;}
-         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { toggleRelay(4); speakText("Relay empat dinyalakan"); matched = true;}
+         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { if (!stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dinyalakan"); matched = true; }
+         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { if (!stateRef.current.patterns[2]) togglePattern(2); speakText("Pola dua dinyalakan"); matched = true; }
+         else if (transcript.includes("relay satu") || transcript.includes("relay 1")) { executeRelayCommand(() => { if (!stateRef.current.relays[1]) toggleRelay(1); }, "Relay satu dinyalakan"); }
+         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { executeRelayCommand(() => { if (!stateRef.current.relays[2]) toggleRelay(2); }, "Relay dua dinyalakan"); }
+         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { executeRelayCommand(() => { if (!stateRef.current.relays[3]) toggleRelay(3); }, "Relay tiga dinyalakan"); }
+         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { executeRelayCommand(() => { if (!stateRef.current.relays[4]) toggleRelay(4); }, "Relay empat dinyalakan"); }
       }
       // Off
       else if (transcript.includes("mati") || transcript.includes("stop") || transcript.includes("off") || transcript.includes("padam")) {
-         if (transcript.includes("semua relay") || transcript.includes("semua lampu") || transcript.includes("all relay") || transcript.includes("all lamp") || transcript.includes("semuanya")) {
-            if (stateRef.current.relays[1]) toggleRelay(1);
-            if (stateRef.current.relays[2]) toggleRelay(2);
-            if (stateRef.current.relays[3]) toggleRelay(3);
-            if (stateRef.current.relays[4]) toggleRelay(4);
-            speakText("Semua relay dimatikan");
+         const isPatternActive = stateRef.current.patterns[1] || stateRef.current.patterns[2];
+         const executeRelayCommand = (action: () => void, textResult: string) => {
+            if (isPatternActive) {
+               speakText("Gagal, pola sedang aktif");
+            } else {
+               action();
+               speakText(textResult);
+            }
             matched = true;
+         };
+
+         if (transcript.includes("semua relay") || transcript.includes("semua lampu") || transcript.includes("all relay") || transcript.includes("all lamp") || transcript.includes("semuanya")) {
+            executeRelayCommand(() => setAllRelays(false), "Semua relay dimatikan");
          }
          else if (transcript.includes("semua pola")) { 
              if (stateRef.current.patterns[1]) togglePattern(1);
@@ -293,12 +305,12 @@ export default function App() {
              speakText("Semua pola dimatikan");
              matched = true;
          }
-         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
-         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
-         else if (transcript.includes("relay satu") || transcript.includes("relay 1")) { toggleRelay(1); speakText("Relay satu dimatikan"); matched = true; }
-         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { toggleRelay(2); speakText("Relay dua dimatikan"); matched = true;}
-         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { toggleRelay(3); speakText("Relay tiga dimatikan"); matched = true;}
-         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { toggleRelay(4); speakText("Relay empat dimatikan"); matched = true;}
+         else if (transcript.includes("pola satu") || transcript.includes("pola 1")) { if (stateRef.current.patterns[1]) togglePattern(1); speakText("Pola satu dimatikan"); matched = true;}
+         else if (transcript.includes("pola dua") || transcript.includes("pola 2")) { if (stateRef.current.patterns[2]) togglePattern(2); speakText("Pola dua dimatikan"); matched = true;}
+         else if (transcript.includes("relay satu") || transcript.includes("relay 1")) { executeRelayCommand(() => { if (stateRef.current.relays[1]) toggleRelay(1); }, "Relay satu dimatikan"); }
+         else if (transcript.includes("relay dua") || transcript.includes("relay 2")) { executeRelayCommand(() => { if (stateRef.current.relays[2]) toggleRelay(2); }, "Relay dua dimatikan"); }
+         else if (transcript.includes("relay tiga") || transcript.includes("relay 3")) { executeRelayCommand(() => { if (stateRef.current.relays[3]) toggleRelay(3); }, "Relay tiga dimatikan"); }
+         else if (transcript.includes("relay empat") || transcript.includes("relay 4")) { executeRelayCommand(() => { if (stateRef.current.relays[4]) toggleRelay(4); }, "Relay empat dimatikan"); }
       }
 
       if (!matched && !!transcript) {
